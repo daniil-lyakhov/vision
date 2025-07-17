@@ -14,6 +14,8 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 from transforms import get_mixup_cutmix
+from xnnpack_quantization import quantize_model
+from xnnpack_quantization import quantize_model_nncf
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -60,7 +62,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
 
 
 def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
-    model.eval()
+    #model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
 
@@ -354,6 +356,20 @@ def main(args):
         # We disable the cudnn benchmarking because it can noticeably affect the accuracy
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
+        def transform_fn(x):
+            return x[0]
+
+        print(f"START QUANTIZATION NNCF={args.nncf}")
+        if args.nncf:
+            q_model = quantize_model_nncf(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
+        else:
+            q_model = quantize_model(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
+        q_model = q_model.to(device)
+        print(str(q_model.code)[-100:])
+        print("QUANTIZED SUCCESSFULLY")
+
+        result = evaluate(q_model, criterion, data_loader_test, device=device)
+        return result
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
         else:
@@ -520,6 +536,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
+    parser.add_argument("--nncf", action="store_true", help="Use nncf")
     return parser
 
 
