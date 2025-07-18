@@ -7,6 +7,7 @@ from train import get_args_parser
 
 
 MODELS = [
+("resnet18", "ResNet18_Weights.IMAGENET1K_V1"),
 ("alexnet", "AlexNet_Weights.IMAGENET1K_V1"),
 ("convnext_base", "ConvNeXt_Base_Weights.IMAGENET1K_V1"),
 ("convnext_large", "ConvNeXt_Large_Weights.IMAGENET1K_V1"),
@@ -21,7 +22,7 @@ MODELS = [
 ("efficientnet_b2", "EfficientNet_B2_Weights.IMAGENET1K_V1"),
 ("efficientnet_b3", "EfficientNet_B3_Weights.IMAGENET1K_V1"),
 ("efficientnet_b4", "EfficientNet_B4_Weights.IMAGENET1K_V1"),
-("efficientnet_b5", "EfficientNet_B5_Weights.IMAGENET1K_V1"),
+("efficientnet_b5", "EfficientNet_B5_Weights.IMAGENET1K_V1"),# DONE
 ("efficientnet_b6", "EfficientNet_B6_Weights.IMAGENET1K_V1"),
 ("efficientnet_b7", "EfficientNet_B7_Weights.IMAGENET1K_V1"),
 ("efficientnet_v2_l", "EfficientNet_V2_L_Weights.IMAGENET1K_V1"),
@@ -99,7 +100,7 @@ MODELS = [
 ("wide_resnet101_2", "Wide_ResNet101_2_Weights.IMAGENET1K_V1"),
 ("wide_resnet50_2", "Wide_ResNet50_2_Weights.IMAGENET1K_V1"),]
 
-#MODELS = MODELS[:1]
+MODELS = MODELS[:1]
 results = []
 for model, weight in MODELS:
     for use_nncf in [False, True]:

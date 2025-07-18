@@ -364,9 +364,15 @@ def main(args):
             q_model = quantize_model_nncf(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
         else:
             q_model = quantize_model(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
+        #from torch.fx.passes.graph_drawer import FxGraphDrawer
+        #output_svg_path = f"{model.__class__.__name__}_{'nncf' if args.nncf else 'ao'}.svg"
+        #g = FxGraphDrawer(q_model, output_svg_path)
+        #g.get_dot_graph().write_svg(output_svg_path)
+
         q_model = q_model.to(device)
         print(str(q_model.code)[-100:])
         print("QUANTIZED SUCCESSFULLY")
+        #return 0
 
         result = evaluate(q_model, criterion, data_loader_test, device=device)
         return result

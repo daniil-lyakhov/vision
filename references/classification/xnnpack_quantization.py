@@ -50,10 +50,17 @@ def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn):
     batch_size = calibration_dataset.batch_size or 1
     subset_size = (subset_size // batch_size) + int(subset_size % batch_size > 0)
 
+    from nncf.quantization.range_estimator import RangeEstimatorParameters
+    from nncf.quantization.range_estimator import StatisticsCollectorParameters
+    from nncf.quantization.range_estimator import StatisticsType
+    from nncf.quantization.range_estimator import AggregatorType
     return nncf_fx.quantize_pt2e(
         aten_dialect.module(),
         quantizer,
         subset_size=subset_size,
         calibration_dataset=nncf.Dataset(calibration_dataset, transform_fn),
+        activations_range_estimator_params=RangeEstimatorParameters(
+            min=StatisticsCollectorParameters(statistics_type=StatisticsType.MIN, aggregator_type=AggregatorType.MIN),
+           max=StatisticsCollectorParameters(statistics_type=StatisticsType.MAX, aggregator_type=AggregatorType.MAX)),
         **quantize_pt2e_kwargs
     )
