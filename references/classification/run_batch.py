@@ -1,29 +1,36 @@
 
 from train import main
 from train import get_args_parser
+import subprocess
+import sys
+import os
 
 
 
 
 
 MODELS = [
-("resnet18", "ResNet18_Weights.IMAGENET1K_V1"),
-("alexnet", "AlexNet_Weights.IMAGENET1K_V1"),
-("convnext_base", "ConvNeXt_Base_Weights.IMAGENET1K_V1"),
+#("resnet18", "ResNet18_Weights.IMAGENET1K_V1"),
+#("alexnet", "AlexNet_Weights.IMAGENET1K_V1"),
+#("convnext_base", "ConvNeXt_Base_Weights.IMAGENET1K_V1"),
 ("convnext_large", "ConvNeXt_Large_Weights.IMAGENET1K_V1"),
-("convnext_small", "ConvNeXt_Small_Weights.IMAGENET1K_V1"),
-("convnext_tiny", "ConvNeXt_Tiny_Weights.IMAGENET1K_V1"),
+#("convnext_small", "ConvNeXt_Small_Weights.IMAGENET1K_V1"),
+#("convnext_tiny", "ConvNeXt_Tiny_Weights.IMAGENET1K_V1"),
 ("densenet121", "DenseNet121_Weights.IMAGENET1K_V1"),
 ("densenet161", "DenseNet161_Weights.IMAGENET1K_V1"),
 ("densenet169", "DenseNet169_Weights.IMAGENET1K_V1"),
 ("densenet201", "DenseNet201_Weights.IMAGENET1K_V1"),
-("efficientnet_b0", "EfficientNet_B0_Weights.IMAGENET1K_V1"),
-("efficientnet_b1", "EfficientNet_B1_Weights.IMAGENET1K_V1"),
-("efficientnet_b2", "EfficientNet_B2_Weights.IMAGENET1K_V1"),
-("efficientnet_b3", "EfficientNet_B3_Weights.IMAGENET1K_V1"),
-("efficientnet_b4", "EfficientNet_B4_Weights.IMAGENET1K_V1"),
-("efficientnet_b5", "EfficientNet_B5_Weights.IMAGENET1K_V1"),# DONE
-("efficientnet_b6", "EfficientNet_B6_Weights.IMAGENET1K_V1"),
+#("efficientnet_b0", "EfficientNet_B0_Weights.IMAGENET1K_V1"),
+#("efficientnet_b1", "EfficientNet_B1_Weights.IMAGENET1K_V1"),
+#("efficientnet_b2", "EfficientNet_B2_Weights.IMAGENET1K_V1"),
+#("efficientnet_b3", "EfficientNet_B3_Weights.IMAGENET1K_V1"),
+#("efficientnet_b4", "EfficientNet_B4_Weights.IMAGENET1K_V1"),
+#("efficientnet_b5", "EfficientNet_B5_Weights.IMAGENET1K_V1"),# DONE
+]
+
+MODELS = [
+#("resnet18", "ResNet18_Weights.IMAGENET1K_V1"),
+#("efficientnet_b6", "EfficientNet_B6_Weights.IMAGENET1K_V1"),
 ("efficientnet_b7", "EfficientNet_B7_Weights.IMAGENET1K_V1"),
 ("efficientnet_v2_l", "EfficientNet_V2_L_Weights.IMAGENET1K_V1"),
 ("efficientnet_v2_m", "EfficientNet_V2_M_Weights.IMAGENET1K_V1"),
@@ -100,21 +107,30 @@ MODELS = [
 ("wide_resnet101_2", "Wide_ResNet101_2_Weights.IMAGENET1K_V1"),
 ("wide_resnet50_2", "Wide_ResNet50_2_Weights.IMAGENET1K_V1"),]
 
-MODELS = MODELS[:1]
 results = []
 for model, weight in MODELS:
-    for use_nncf in [False, True]:
-        nncf_flag = ["--nncf"] if use_nncf else []
-        args = get_args_parser().parse_args(f"--data-path /home/dlyakhov/datasets/imagenet/ --model {model} --test-only --weights {weight} --batch 64 ".split() + nncf_flag)
+    for use_nncf, bc in [(False, False), (True, False), (True, True)]:
+        nncf_flags = ["--nncf"] if use_nncf else []
+        if bc:
+            nncf_flags.append("--bc")
+        args = get_args_parser().parse_args(f"--data-path /home/dlyakhov/datasets/imagenet/ --model {model} --test-only --weights {weight} --batch 64 ".split() + nncf_flags)
         exc = ""
+
         try:
-            result = main(args)
+            logging = []
+            command = f"--data-path /home/dlyakhov/datasets/imagenet/ --model {model} --test-only --weights {weight} --batch 64 ".split() + nncf_flags + logging
+            command = [sys.executable] + [os.path.join(os.getcwd(), "train.py")] + command
+            print(command)
+            output = subprocess.check_output(command)
+            print(output)
+            result = str(output).split("\\n")[-2]
+            #result = main(args)
         except:
             from traceback import format_exc
             exc = format_exc()
             print(exc)
             result = -1
-        results.append((model, weight, use_nncf, result, exc))
+        results.append((model, weight, use_nncf, bc, result, exc))
 
 
 print(results)

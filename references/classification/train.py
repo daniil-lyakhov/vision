@@ -361,7 +361,7 @@ def main(args):
 
         print(f"START QUANTIZATION NNCF={args.nncf}")
         if args.nncf:
-            q_model = quantize_model_nncf(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
+            q_model = quantize_model_nncf(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn, args.bc)
         else:
             q_model = quantize_model(model.eval().cpu(), (next(iter(data_loader_test))[0],),data_loader_test, transform_fn)
         #from torch.fx.passes.graph_drawer import FxGraphDrawer
@@ -543,6 +543,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
     parser.add_argument("--nncf", action="store_true", help="Use nncf")
+    parser.add_argument("--bc", action="store_true", help="Use BC instad of FBC")
     return parser
 
 

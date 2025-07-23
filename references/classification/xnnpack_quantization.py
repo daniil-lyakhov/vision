@@ -39,7 +39,7 @@ def quantize_model(model, example_args, calibration_dataset, transform_fn):
     return quantized_model
 
 
-def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn):
+def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn, bc):
     aten_dialect: ExportedProgram = torch.export.export_for_training(model, example_args, strict=True)
     quantizer = get_xnnpack_quantizer({})
     #quantize_pt2e_kwargs = quantize_pt2e_kwargs or {}
@@ -62,5 +62,6 @@ def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn):
         activations_range_estimator_params=RangeEstimatorParameters(
             min=StatisticsCollectorParameters(statistics_type=StatisticsType.MIN, aggregator_type=AggregatorType.MIN),
            max=StatisticsCollectorParameters(statistics_type=StatisticsType.MAX, aggregator_type=AggregatorType.MAX)),
+        fast_bias_correction=not bc,
         **quantize_pt2e_kwargs
     )
