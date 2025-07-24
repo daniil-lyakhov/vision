@@ -1,3 +1,6 @@
+from coremltools.optimize.torch.quantization._coreml_quantizer import (  # noqa: FLAKE8 F401
+    CoreMLQuantizer,
+)
 import torch
 from executorch.backends.xnnpack.quantizer.xnnpack_quantizer import (
     get_symmetric_quantization_config,
@@ -9,23 +12,24 @@ from torch.ao.quantization.quantize_pt2e import convert_pt2e
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e
 import nncf.experimental.torch.fx as nncf_fx  # type: ignore[import-untyped]
 import nncf
+import coremltools as ct
 
-def get_xnnpack_quantizer(kwargs):
-    quantizer = XNNPACKQuantizer()
-    # if we set is_per_channel to True, we also need to add out_variant of quantize_per_channel/dequantize_per_channel
-    kwargs["is_dynamic"] = False
-    if "is_per_channel" not in kwargs:
-        kwargs["is_per_channel"] = False
-    operator_config = get_symmetric_quantization_config(
-        **kwargs
+def get_coreml_quantizer(kwargs):
+    static_8bit_config = ct.optimize.torch.quantization.LinearQuantizerConfig(
+        global_config=ct.optimize.torch.quantization.ModuleLinearQuantizerConfig(
+            quantization_scheme="symmetric",
+            activation_dtype=torch.quint8,
+            weight_dtype=torch.qint8,
+            weight_per_channel=True,
+        )
     )
-    quantizer.set_global(operator_config)
+    quantizer = CoreMLQuantizer(static_8bit_config)
     return quantizer
 
 
 def quantize_model(model, example_args, calibration_dataset, transform_fn):
-    aten_dialect: ExportedProgram = torch.export.export_for_training(model, example_args, strict=True)
-    quantizer = get_xnnpack_quantizer({})
+    aten_dialect: ExportedProgram = torch.export.export_for_training(model, example_args, strict=False)
+    quantizer = get_coreml_quantizer({})
     m = prepare_pt2e(aten_dialect.module(), quantizer)
     # calibration
 
@@ -40,8 +44,8 @@ def quantize_model(model, example_args, calibration_dataset, transform_fn):
 
 
 def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn, bc):
-    aten_dialect: ExportedProgram = torch.export.export_for_training(model, example_args, strict=True)
-    quantizer = get_xnnpack_quantizer({})
+    aten_dialect: ExportedProgram = torch.export.export_for_training(model, example_args, strict=False)
+    quantizer = get_coreml_quantizer({})
     #quantize_pt2e_kwargs = quantize_pt2e_kwargs or {}
     quantize_pt2e_kwargs = {}
     quantize_pt2e_kwargs["fold_quantize"] = True
@@ -59,9 +63,9 @@ def quantize_model_nncf(model, example_args, calibration_dataset, transform_fn, 
         quantizer,
         subset_size=subset_size,
         calibration_dataset=nncf.Dataset(calibration_dataset, transform_fn),
-        #activations_range_estimator_params=RangeEstimatorParameters(
-        #    min=StatisticsCollectorParameters(statistics_type=StatisticsType.MIN, aggregator_type=AggregatorType.MIN),
-        #   max=StatisticsCollectorParameters(statistics_type=StatisticsType.MAX, aggregator_type=AggregatorType.MAX)),
+        activations_range_estimator_params=RangeEstimatorParameters(
+            min=StatisticsCollectorParameters(statistics_type=StatisticsType.MIN, aggregator_type=AggregatorType.MIN),
+           max=StatisticsCollectorParameters(statistics_type=StatisticsType.MAX, aggregator_type=AggregatorType.MAX)),
         fast_bias_correction=not bc,
         **quantize_pt2e_kwargs
     )

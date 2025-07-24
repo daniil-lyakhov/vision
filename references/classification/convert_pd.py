@@ -26,7 +26,8 @@ breakpoint()
 pivot_df = df.pivot(index=['Model', "Weights"], columns='Category', values='Acc@1').reset_index()
 
 # Optional: Sort columns for consistent order
-pivot_df = pivot_df[['Model', 'Weights', 'TorchAO', 'NNCF', 'NNCF+BC']]
+#pivot_df = pivot_df[['Model', 'Weights', 'TorchAO', 'NNCF', 'NNCF+BC']]
+pivot_df = pivot_df[['Model', 'Weights', 'NNCF', 'NNCF+BC']]
 print(pivot_df)
 pivot_df.to_csv("pivot_result.csv")
 #print(lines)

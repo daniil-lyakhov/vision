@@ -14,8 +14,10 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 from transforms import get_mixup_cutmix
-from xnnpack_quantization import quantize_model
-from xnnpack_quantization import quantize_model_nncf
+#from xnnpack_quantization import quantize_model
+#from xnnpack_quantization import quantize_model_nncf
+from coreml_quantization import quantize_model
+from coreml_quantization import quantize_model_nncf
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
